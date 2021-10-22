@@ -96,10 +96,10 @@ public class TestHdbscan {
         regexMappingProcessors.put("Feature2", new DoubleFieldProcessor("Feature2"));
         regexMappingProcessors.put("Feature3", new DoubleFieldProcessor("Feature3"));
         RowProcessor<ClusterID> rowProcessor = new RowProcessor<>(emptyResponseProcessor,regexMappingProcessors);
-        CSVDataSource<ClusterID> csvDataSource = new CSVDataSource<>(Paths.get("src/test/resources/basic-gaussians-first1980.csv"),rowProcessor,false);
+        CSVDataSource<ClusterID> csvDataSource = new CSVDataSource<>(Paths.get("src/test/resources/basic-gaussians-train.csv"),rowProcessor,false);
         Dataset<ClusterID> dataset = new MutableDataset<>(csvDataSource);
 
-        CSVDataSource<ClusterID> csvTestSource = new CSVDataSource<>(Paths.get("src/test/resources/basic-gaussians-last20.csv"),rowProcessor,false);
+        CSVDataSource<ClusterID> csvTestSource = new CSVDataSource<>(Paths.get("src/test/resources/basic-gaussians-predict.csv"),rowProcessor,false);
         Dataset<ClusterID> testSet = new MutableDataset<>(csvTestSource);
 
         HdbscanTrainer trainer = new HdbscanTrainer(7, Distance.EUCLIDEAN, 7,1);
