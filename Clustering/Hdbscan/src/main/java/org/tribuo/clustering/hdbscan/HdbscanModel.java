@@ -27,19 +27,11 @@ import org.tribuo.provenance.ModelProvenance;
 import java.util.*;
 
 /**
- * An HDBSCAN* model. Update all the rest of this!
+ * A trained HDBSCAN* model which provides the cluster assignment labels and outlier scores for every data point.
  * <p>
- * The predict method of this model assigns centres to the provided input,
- * but it does not update the model's centroids.
- * <p>
- * The predict method is single threaded.
- * <p>
- * See:
- * <pre>
- * J. Friedman, T. Hastie, &amp; R. Tibshirani.
- * "The Elements of Statistical Learning"
- * Springer 2001. <a href="http://web.stanford.edu/~hastie/ElemStatLearn/">PDF</a>
- * </pre>
+ * The predict method of this model approximates the cluster labels for new data points, based on the
+ * current clustering. The model is not updated with the new data. This is a novel prediction technique which
+ * leverages the computed artifacts from the HDBSCAN* algorithm.
  */
 public class HdbscanModel extends Model<ClusterID> {
     private static final long serialVersionUID = 1L;
@@ -65,18 +57,19 @@ public class HdbscanModel extends Model<ClusterID> {
     /**
      * Returns the cluster labels.
      * <p>
-     * This seems pretty standard, but maybe write more stuff.
-     * @return The cluster labels for all the data points.
+     * The labels have the same order as the original data points.
+     * @return The cluster labels for every data point.
      */
     public List<Integer> getClusterLabels() {
         return new ArrayList<>(clusterLabels);
     }
 
     /**
-     * Returns the outlier scores.
+     * Returns the GLOSH outlier scores. These are values between 0 and 1. A higher score indicates that a point
+     * is more likely to be an outlier.
      * <p>
-     * This seems pretty standard, but maybe write more stuff.
-     * @return The outlier scores for all the data points.
+     * The outlier scores have the same order as the original data points.
+     * @return The outlier scores for every data point.
      */
     public DenseVector getOutlierScoresVector() {
         return outlierScoresVector.copy();

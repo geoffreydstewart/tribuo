@@ -35,27 +35,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * An HDBSCAN* trainer. Update all the rest of this!
+ * An HDBSCAN* trainer which generates a hierarchical, density-based clustering representation
+ * of the supplied data.
  * <p>
- * It's slightly contorted to fit the Tribuo Trainer and Model API, as the cluster assignments
- * can only be retrieved from the model after training, and require re-evaluating each example.
- * <p>
- * The Trainer has a parameterised distance function, and a selectable number
- * of threads used in the training step. The thread pool is local to an invocation of train,
- * so there can be multiple concurrent trainings.
+ * The cluster assignments and outlier scores can be retrieved from the model after training.
  * <p>
  * See:
  * <pre>
- * J. Friedman, T. Hastie, &amp; R. Tibshirani.
- * "The Elements of Statistical Learning"
- * Springer 2001. <a href="http://web.stanford.edu/~hastie/ElemStatLearn/">PDF</a>
- * </pre>
- * <p>
- * For more on optional kmeans++ initialisation, see:
- * <pre>
- * D. Arthur, S. Vassilvitskii.
- * "K-Means++: The Advantages of Careful Seeding"
- * <a href="https://theory.stanford.edu/~sergei/papers/kMeansPP-soda">PDF</a>
+ * R.J.G.B. Campello, D. Moulavi, A. Zimek and J. Sander "Hierarchical Density Estimates for Data Clustering,
+ * Visualization, and Outlier Detection", ACM Trans. on Knowledge Discovery from Data, Vol 10, 1 (July 2015), 1-51.
+ * <a href="http://lapad-web.icmc.usp.br/?portfolio_1=a-handful-of-experiments">HDBSCAN*</a>
  * </pre>
  */
 public class HdbscanTrainer implements Trainer<ClusterID> {
@@ -276,6 +265,7 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
         int numAttachedPoints = 1;
         attachedPoints.set(data.length-1);
 
+        // TODO: this needs to be optimized through parallelization
         // Continue attaching points to the MST until all points are attached:
         while (numAttachedPoints < data.length) {
             int nearestMRDPoint = -1;
@@ -593,7 +583,7 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
             clusterList.add(cluster.getLabel());
         }
 
-        //Go through the hierarchy file, setting labels for the flat clustering:
+        //Go through the hierarchy, setting labels for the flat clustering:
         while (!significantLevels.isEmpty()) {
             Map.Entry<Integer, List<Integer>> entry = significantLevels.pollFirstEntry();
             List<Integer> clusterList = entry.getValue();
@@ -624,6 +614,7 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
         int numPoints = pointNoiseLevels.length;
         DenseVector outlierScores = new DenseVector(numPoints);
 
+        // TODO: this needs to be optimized through parallelization
         // Iterate through each point, calculating its outlier score:
         for (int i = 0; i < numPoints; i++) {
             double epsilon_max = clusters.get(pointLastClusters[i]).getPropagatedLowestChildDeathLevel();
@@ -678,6 +669,7 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
         int numExemplarsFractionalSize = (int) Math.round(data.length * NUM_EXEMPLARS_FRACTIONAL_VALUE);
         int mumExemplars =  Math.min(numExemplarsFractionalSize, MAX_NUM_EXEMPLARS);
 
+        // TODO: this needs to be optimized through parallelization
         for (Entry<Integer, TreeMap<Double, Integer>> e : clusterAssignments.entrySet()) {
             int clusterLabel = e.getKey();
             TreeMap<Double, Integer> outlierScoreIndexTree = clusterAssignments.get(clusterLabel);
