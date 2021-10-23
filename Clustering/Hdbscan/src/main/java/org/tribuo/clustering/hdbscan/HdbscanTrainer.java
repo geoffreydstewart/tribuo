@@ -38,7 +38,8 @@ import java.util.logging.Logger;
  * An HDBSCAN* trainer which generates a hierarchical, density-based clustering representation
  * of the supplied data.
  * <p>
- * The cluster assignments and outlier scores can be retrieved from the model after training.
+ * The cluster assignments and outlier scores can be retrieved from the model after training. Outliers or noise
+ * points are assigned the label 0.
  * <p>
  * See:
  * <pre>
@@ -51,12 +52,6 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
     private static final Logger logger = Logger.getLogger(HdbscanTrainer.class.getName());
 
     static final int OUTLIER_NOISE_CLUSTER_LABEL = 0;
-
-    // The fractional value to apply to the size of the dataset to determine the number of exemplars.
-    private static final double NUM_EXEMPLARS_FRACTIONAL_VALUE = 0.01;
-
-    // The maximum number of exemplars to use for prediction.
-    private static final int MAX_NUM_EXEMPLARS = 100;
 
     /**
      * Available distance functions.
@@ -666,8 +661,9 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
      */
     private static List<ClusterExemplar> computeExemplars(SGDVector[] data, Map<Integer, TreeMap<Double, Integer>> clusterAssignments) {
         List<ClusterExemplar> clusterExemplars = new ArrayList<>();
-        int numExemplarsFractionalSize = (int) Math.round(data.length * NUM_EXEMPLARS_FRACTIONAL_VALUE);
-        int mumExemplars =  Math.min(numExemplarsFractionalSize, MAX_NUM_EXEMPLARS);
+        // Calculate the number of exemplars to be used for this configuration. The number of exemplars is
+        // important for prediction. At the time, this function provides a good value for most scenarios.
+        int mumExemplars = (int) Math.sqrt(data.length / 2.0) + clusterAssignments.size();
 
         // TODO: this needs to be optimized through parallelization
         for (Entry<Integer, TreeMap<Double, Integer>> e : clusterAssignments.entrySet()) {
