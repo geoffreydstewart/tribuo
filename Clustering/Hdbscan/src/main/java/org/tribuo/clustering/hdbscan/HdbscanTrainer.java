@@ -260,13 +260,13 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
         int numAttachedPoints = 1;
         attachedPoints.set(data.length-1);
 
-        // TODO: this needs to be optimized through parallelization
         // Continue attaching points to the MST until all points are attached:
         while (numAttachedPoints < data.length) {
             int nearestMRDPoint = -1;
             double nearestMRDDistance = Double.MAX_VALUE;
 
             // Iterate through all unattached points, updating distances using the current point:
+            // TODO: this needs to be optimized through parallelization
             for (int neighbor = 0; neighbor < data.length; neighbor++) {
                 if (currentPoint == neighbor)
                     continue;
