@@ -43,7 +43,8 @@ public class HdbscanOptions implements Options {
     /**
      * The number of nearest-neighbors to use in the initial density approximation.
      */
-    @Option(longName = "k-nearest-neighbors", usage = "The number of nearest-neighbors to use in the initial density approximation. Defaults to 5.")
+    @Option(longName = "k-nearest-neighbors", usage = "The number of nearest-neighbors to use in the initial density approximation. " +
+        "The value includes the point itself. Defaults to 5.")
     public int k = 5;
 
     /**

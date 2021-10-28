@@ -77,7 +77,8 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
     @Config(description = "The distance function to use.")
     private Distance distanceType;
 
-    @Config(description = "The number of nearest-neighbors to use in the initial density approximation.")
+    @Config(description = "The number of nearest-neighbors to use in the initial density approximation. " +
+        "This includes the point itself.")
     private int k;
 
     @Config(description = "The number of threads to use for training.")
@@ -194,6 +195,7 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
      * @return A {@link DenseVector} containing the core distances for every point.
      */
     private static DenseVector calculateCoreDistances(SGDVector[] data, int k, Distance distanceType) {
+        // The value of nearest-neighbors includes the point itself. The number of actual neighbors is one less.
         int numNeighbors = k - 1;
         DenseVector coreDistances = new DenseVector(data.length);
 
@@ -732,5 +734,5 @@ public class HdbscanTrainer implements Trainer<ClusterID> {
             super(a, b);
         }
     }
-
+    
 }
