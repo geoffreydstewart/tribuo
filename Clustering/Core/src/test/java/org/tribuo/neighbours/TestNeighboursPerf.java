@@ -56,31 +56,32 @@ public class TestNeighboursPerf {
     }
 
     private static void doTestIteration(NeighboursBruteForceFactory nbfFactory, NeighboursBruteForceNewFactory nbfnFactory) {
-        SGDVector[] data = getVectors(20000, 1L);
+        SGDVector[] data = getVectors(200000, 1L);
 
-        logger.info("Target implementation: small dataset, small k");
+        logger.info("Target implementation: big dataset, small k");
         NeighboursBruteForce nbf = nbfFactory.createNeighboursQuery(data);
         executeQuery(nbf, 5);
 
-        logger.info("New implementation: small dataset, small k");
+        logger.info("New implementation: big dataset, small k");
         NeighboursBruteForceNew nbfn = nbfnFactory.createNeighboursQuery(data);
         executeQuery(nbfn, 5);
         logger.info("");
 
-        logger.info("Target implementation: small dataset, medium k");
-        executeQuery(nbf, 50);
+        //logger.info("Target implementation: small dataset, medium k");
+        //executeQuery(nbf, 50);
 
-        logger.info("New implementation: small dataset, medium k");
-        executeQuery(nbfn, 50);
-        logger.info("");
+        //logger.info("New implementation: small dataset, medium k");
+        //executeQuery(nbfn, 50);
+        //logger.info("");
 
-        logger.info("Target implementation: small dataset, large k");
+        logger.info("Target implementation: big dataset, large k");
         executeQuery(nbf, 200);
 
-        logger.info("New implementation: small dataset, large k");
+        logger.info("New implementation: big dataset, large k");
         executeQuery(nbfn, 200);
         logger.info("");
 
+        /*
         logger.info("");
         ////
 
@@ -133,7 +134,7 @@ public class TestNeighboursPerf {
         logger.info("New implementation: big dataset, large k");
         executeQuery(nbfn, 200);
 
-        logger.info("");
+        logger.info("");*/
         ////
     }
 
