@@ -209,7 +209,7 @@ public class NeighbourQueryTestHelper {
     }
 
     static void neighboursQueryMany3D(NeighboursQueryFactory nqf) {
-        // Test with a 3 dimensional dataset
+        // Tests with a 3 dimensional dataset
         SGDVector[] data = get3DTestDataVectorArray();
         SGDVector[] queryData = get3DTestQueryVectorArray();
 

@@ -14,17 +14,22 @@ import org.tribuo.math.distance.DistanceType;
 import org.tribuo.math.la.DenseVector;
 import org.tribuo.math.la.SGDVector;
 import org.tribuo.math.neighbour.NeighboursQuery;
+import org.tribuo.math.neighbour.NeighboursQueryFactory;
 import org.tribuo.math.neighbour.bruteforce.NeighboursBruteForce;
 import org.tribuo.math.neighbour.bruteforce.NeighboursBruteForceFactory;
-import org.tribuo.math.neighbour.kdtree.KDTree;
 import org.tribuo.math.neighbour.kdtree.KDTreeFactory;
 import org.tribuo.util.Util;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * TODO: Delete this right before creating PR, maybe make a branch first
+ * TODO: Delete this right before creating PR, maybe make a branch first. Delete the .csv files here too.
  */
 public class TestNeighboursPerf {
 
@@ -35,7 +40,7 @@ public class TestNeighboursPerf {
         logger.setLevel(Level.INFO);
     }
 
-    private static SGDVector[] getVectors(int numSamples, long seed) {
+    private static SGDVector[] get2DVectors(int numSamples, long seed) {
         DataSource<ClusterID> dataSource = new GaussianClusterDataSource(numSamples, seed);
         Dataset<ClusterID> dataset = new MutableDataset<>(dataSource);
 
@@ -49,95 +54,79 @@ public class TestNeighboursPerf {
         return vectors;
     }
 
-    private static void executeQuery(NeighboursQuery nq, int k) {
+    private static SGDVector[] getSGDVectorsFromCSV(String filePath, boolean fileContainsHeader) {
+        List<SGDVector> vectorList = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+
+            if (fileContainsHeader) {
+                line = br.readLine();
+                System.out.println("The header line: " + line + " was ignored.");
+            }
+
+            while ((line = br.readLine()) != null) {
+                String[] values = line.split(",");
+                double[] doubles = new double[values.length];
+                for (int i=0; i<values.length; i++) {
+                    doubles[i] = Double.parseDouble(values[i]);
+                }
+                SGDVector vector = DenseVector.createDenseVector(doubles);
+                vectorList.add(vector);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("\nThere is a problem with the file " + filePath);
+        }
+        return vectorList.toArray(new SGDVector[0]);
+    }
+
+    private static void constructNQandExecuteQuery(NeighboursQueryFactory nqf, SGDVector[] data, int k) {
         long startTime = System.currentTimeMillis();
+        NeighboursQuery nq = nqf.createNeighboursQuery(data);
         nq.queryAll(k);
         long endTime = System.currentTimeMillis();
-        logger.info("Query took " + Util.formatDuration(startTime,endTime));
+        logger.info("Construct and Query took " + Util.formatDuration(startTime,endTime));
         logger.info("");
     }
 
     private static void doTestIteration(NeighboursBruteForceFactory nbfFactory, KDTreeFactory kdtFactory) {
-        SGDVector[] data = getVectors(200000, 1L);
+        SGDVector[] data = get2DVectors(200000, 1L);
 
-        logger.info("NeighboursBruteForce: big dataset, small k");
-        NeighboursBruteForce nbf = nbfFactory.createNeighboursQuery(data);
-        executeQuery(nbf, 5);
+        logger.info("NeighboursBruteForce: big dataset, 2 features, small k");
+        constructNQandExecuteQuery(nbfFactory, data, 5);
 
-        logger.info("KDTree: big dataset, small k");
-        KDTree kdt = kdtFactory.createNeighboursQuery(data);
-        executeQuery(kdt, 5);
+        logger.info("KDTree: big dataset, 2 features, small k");
+        constructNQandExecuteQuery(kdtFactory, data, 5);
         logger.info("");
 
-        //logger.info("Target implementation: small dataset, medium k");
-        //executeQuery(nbf, 50);
+        String filename = "gaussians-10features.csv";
+        String filepath = TestNeighboursPerf.class.getClassLoader().getResource(filename).getPath();
+        data = getSGDVectorsFromCSV(filepath, true);
 
-        //logger.info("New implementation: small dataset, medium k");
-        //executeQuery(nbfn, 50);
-        //logger.info("");
+        logger.info("NeighboursBruteForce: medium dataset, 10 features, small k");
+        constructNQandExecuteQuery(nbfFactory, data, 5);
 
-        logger.info("Target implementation: big dataset, large k");
-        executeQuery(nbf, 200);
-
-        logger.info("New implementation: big dataset, large k");
-        executeQuery(kdt, 200);
+        logger.info("KDTree: medium dataset, 10 features, small k");
+        constructNQandExecuteQuery(kdtFactory, data, 5);
         logger.info("");
 
-        /*
-        logger.info("");
-        ////
+        filename = "gaussians-20features.csv";
+        filepath = TestNeighboursPerf.class.getClassLoader().getResource(filename).getPath();
+        data = getSGDVectorsFromCSV(filepath, true);
 
-        data = getVectors(100000, 2L);
+        logger.info("NeighboursBruteForce: medium dataset, 20 features, small k");
+        constructNQandExecuteQuery(nbfFactory, data, 5);
 
-        logger.info("Target implementation: medium dataset, small k");
-        nbf = nbfFactory.createNeighboursQuery(data);
-        executeQuery(nbf, 5);
-
-        logger.info("New implementation:: medium dataset, small k");
-        nbfn = nbfnFactory.createNeighboursQuery(data);
-        executeQuery(nbfn, 5);
+        logger.info("KDTree: medium dataset, 20 features, small k");
+        constructNQandExecuteQuery(kdtFactory, data, 5);
         logger.info("");
 
-        logger.info("Target implementation: medium dataset, medium k");
-        executeQuery(nbf, 50);
+        /*logger.info("Target implementation: big dataset, 2 features, medium k");
+        executeQuery(nbf, 100);
 
-        logger.info("New implementation: medium dataset, medium k");
-        executeQuery(nbfn, 50);
-        logger.info("");
-
-        logger.info("Target implementation: medium dataset, large k");
-        executeQuery(nbf, 200);
-
-        logger.info("New implementation: medium dataset, large k");
-        executeQuery(nbfn, 200);
-
-        logger.info("");
-        ////
-
-        data = getVectors(200000, 3L);
-
-        logger.info("Target implementation: big dataset, small k");
-        nbf = nbfFactory.createNeighboursQuery(data);
-        executeQuery(nbf, 5);
-
-        logger.info("New implementation: big dataset, small k");
-        nbfn = nbfnFactory.createNeighboursQuery(data);
-        executeQuery(nbfn, 5);
-
-        logger.info("Target implementation: big dataset, medium k");
-        executeQuery(nbf, 50);
-
-        logger.info("New implementation: big dataset, medium k");
-        executeQuery(nbfn, 50);
-
-        logger.info("Target implementation: big dataset, large k");
-        executeQuery(nbf, 200);
-
-        logger.info("New implementation: big dataset, large k");
-        executeQuery(nbfn, 200);
-
+        logger.info("New implementation: big dataset, 2 features, medium k");
+        executeQuery(kdt, 100);
         logger.info("");*/
-        ////
     }
 
     @Disabled
