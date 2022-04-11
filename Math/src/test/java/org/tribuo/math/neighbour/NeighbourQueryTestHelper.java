@@ -333,6 +333,31 @@ public class NeighbourQueryTestHelper {
         assertNeighbourDistances(indexDistancePairList, expectedDistance0, expectedDistance1, expectedDistance2);
     }
 
+    static void neighboursQueryOneSimple(NeighboursQueryFactory nqf) {
+        SGDVector[] data = getSimpleTestDataVectorArray();
+        // This point is included in the set of points being queried
+        SGDVector vector = get2DPoint(4.0,4.0);
+
+        NeighboursQuery nq = nqf.createNeighboursQuery(data);
+        List<Pair<Integer, Double>> indexDistancePairList = nq.query(vector, 3);
+
+        // This helper uses k = 3. These are the expected neighboring points.
+        // The point itself is returned as the first neighbouring point, so we don't check that.
+        double[] firstExpectedPoint0 = {5.21,5.28};
+        double[] firstExpectedPoint1 = {5.23,5.02};
+        double[] firstExpectedPoint2 = {4.95,5.25};
+
+
+        //assertNeighbourPoints(data, indexDistancePairList, firstExpectedPoint0, firstExpectedPoint1, firstExpectedPoint2);
+
+        // This helper uses k = 3. These are the expected neighboring distances.
+        double expectedDistance0 = 0.0;
+        double expectedDistance1 = 0.2607680962081067;
+        double expectedDistance2 = 0.26172504656604784;
+
+        //assertNeighbourDistances(indexDistancePairList, expectedDistance0, expectedDistance1, expectedDistance2);
+    }
+
     static void neighboursQuerySingleDimension(NeighboursQueryFactory nqf) {
         SGDVector[] data = new SGDVector[10];
         data[0] = DenseVector.createDenseVector(new double[]{0});
@@ -436,6 +461,32 @@ public class NeighbourQueryTestHelper {
         vectorList.add(get2DPoint(5.21,5.28));
 
         return vectorList;
+    }
+
+    private static SGDVector[] getSimpleTestDataVectorArray() {
+        List<SGDVector> vectorList = new ArrayList<>();
+
+        vectorList.add(get2DPoint(1,1.01));
+        vectorList.add(get2DPoint(2,2.02));
+        vectorList.add(get2DPoint(3,3.03));
+        vectorList.add(get2DPoint(4,4.04));
+        vectorList.add(get2DPoint(5,5.05));
+        vectorList.add(get2DPoint(6,6.06));
+        vectorList.add(get2DPoint(7,7.07));
+        vectorList.add(get2DPoint(8,8.08));
+        vectorList.add(get2DPoint(9,9.09));
+        vectorList.add(get2DPoint(10,10.1));
+        vectorList.add(get2DPoint(11,1.11));
+        vectorList.add(get2DPoint(12,12.12));
+        vectorList.add(get2DPoint(13,13.13));
+        vectorList.add(get2DPoint(14,14.14));
+        vectorList.add(get2DPoint(15,15.15));
+        vectorList.add(get2DPoint(16,16.6));
+        vectorList.add(get2DPoint(17,17.17));
+        vectorList.add(get2DPoint(18,18.18));
+        vectorList.add(get2DPoint(19,19.19));
+
+        return vectorList.toArray(new SGDVector[0]);
     }
 
     private static SGDVector[] get3DTestQueryVectorArray() {

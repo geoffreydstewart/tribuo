@@ -86,4 +86,11 @@ public class TestKDTree {
         KDTreeFactory factory = new KDTreeFactory(DistanceType.L2, 2);
         NeighbourQueryTestHelper.neighboursQueryMany3D(factory);
     }
+
+    @Test
+    public void testNeighboursQueryOneSimple() {
+        KDTreeFactory factory = new KDTreeFactory(DistanceType.L2, 1);
+        NeighbourQueryTestHelper.neighboursQueryOneSimple(factory);
+    }
+
 }

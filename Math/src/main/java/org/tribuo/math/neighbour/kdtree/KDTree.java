@@ -24,6 +24,7 @@ import org.tribuo.math.neighbour.NeighboursQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutorService;
@@ -94,7 +95,9 @@ public class KDTree implements NeighboursQuery {
         }
         DistanceRecordBoundedMinHeap queue = new DistanceRecordBoundedMinHeap(k);
 
-        IntAndVector betterOne = root.nearest(point, queue);
+        initializeQueue(queue, point);
+
+        IntAndVector betterOne = root.nearest(point, queue, false);
 
         if (betterOne != null) {
             double dist = DistanceType.getDistance(betterOne.vector, point, distanceType);
@@ -302,6 +305,49 @@ public class KDTree implements NeighboursQuery {
         points[ind2] = tmpPoint;
     }
 
+    private void initializeQueue(DistanceRecordBoundedMinHeap queue, SGDVector point) {
+        DimensionNode parentOfPoint = parent(point);
+        parentOfPoint.nearest(point, queue,true);
+    }
+
+    /**
+     * TODO: fix these docs!!!
+     * Return the parent of the point IF the point were to be inserted into the kd-tree.
+     *
+     * Returns null only if the tree is empty to begin with (i.e., there are no parents).
+     *
+     * Note that you will have to inspect the dimension for the DimensionalNode to determine
+     * if this is a Below or an Above parent.
+     * @param value    proposed value which could be inserted (but is not).
+     * @return    node which would be parent if given value were to be inserted
+     */
+    public DimensionNode parent (SGDVector value) {
+        // we walk down the tree iteratively, varying from vertical to horizontal
+        DimensionNode node = root;
+        DimensionNode bestNode = node;
+        DimensionNode next;
+        while (node != null) {
+            if (node.getBelow() != null && node.getAbove() != null) {
+                bestNode = node;
+            }
+            // if this point is below node, search that location
+            // break and return this node
+            if (node.isBelow(value)) {
+                next = node.getBelow();
+            } else {
+                next = node.getAbove();
+            }
+            if (next == null) {
+                // break and return this node
+                break;
+            } else {
+                node = next;
+            }
+        }
+
+        return bestNode;
+    }
+
 
     /**
      * Tuple of index and position. A record, perhaps.
@@ -374,6 +420,7 @@ public class KDTree implements NeighboursQuery {
      * must be performed.
      */
     static final class DistanceRecordBoundedMinHeap {
+        private final HashSet<Integer> recordIds = new HashSet<>();
         final int size;
         private final PriorityQueue<MutableDistRecordTuple> queue;
 
@@ -383,14 +430,21 @@ public class KDTree implements NeighboursQuery {
         }
 
         void boundedOffer(IntAndVector record, double distance) {
+            if (recordIds.contains(record.idx)) {
+                return;
+            }
+
             if (queue.size() < size) {
                 queue.offer(new MutableDistRecordTuple(distance, record));
+                recordIds.add(record.idx);
             }
             else if (Double.compare(distance, queue.peek().dist) < 0) {
                 MutableDistRecordTuple tuple = queue.poll();
+                recordIds.remove(tuple.record.idx);
                 tuple.dist = distance;
                 tuple.record = record;
                 queue.offer(tuple);
+                recordIds.add(record.idx);
             }
         }
 
@@ -400,6 +454,10 @@ public class KDTree implements NeighboursQuery {
 
         MutableDistRecordTuple poll() {
             return queue.poll();
+        }
+
+        boolean isFull() {
+            return queue.size() == size;
         }
 
         boolean isEmpty() {

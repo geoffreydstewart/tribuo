@@ -111,6 +111,28 @@ public class DimensionNode {
     }
 
     /**
+     * TODO: fix these docs!!!
+     * Returns whether the point is below the line represented by this node.
+     * <p>
+     * Calculation assumes a multi-dimensional point being compared within the
+     * given dimension 'dimension'
+     *
+     * @param pt    Point being compared
+     * @return      true if pt is "below" us in our dimension
+     */
+    boolean isBelow (SGDVector pt) {
+        return pt.get(dimension - 1) < coord;
+    }
+
+    /**
+     * TODO: fix this!
+     */
+    IntAndVector getRecord() {
+        return record;
+    }
+
+
+    /**
      * In the (sub)tree rooted at this node, see if one of its descendants is closer to the provided point.
      * If no descendant improves on the min[] result then null is returned.
      *
@@ -118,7 +140,11 @@ public class DimensionNode {
      * @param queue The priority queue used to maintain the k nearest neighbours.
      * @return The record in tree that is closest.
      */
-    IntAndVector nearest (SGDVector point, DistanceRecordBoundedMinHeap queue) {
+    IntAndVector nearest (SGDVector point, DistanceRecordBoundedMinHeap queue, boolean isInitPhase) {
+        if (isInitPhase && queue.isFull()) {
+            return null;
+        }
+
         IntAndVector result = null;
 
         // Get the distance between this node and the target point.
@@ -135,13 +161,13 @@ public class DimensionNode {
         if (Double.compare(distPerp, queue.peek().dist) <= 0) {
             // Check both sides
             if (above != null) {
-                newResult = above.nearest(point, queue);
+                newResult = above.nearest(point, queue, isInitPhase);
                 if (newResult != null) {
                     result = newResult;
                 }
             }
             if (below != null) {
-                newResult = below.nearest(point, queue);
+                newResult = below.nearest(point, queue, isInitPhase);
                 if (newResult != null) {
                     result = newResult;
                 }
@@ -150,11 +176,11 @@ public class DimensionNode {
             // Only need to check one subtree, determine which one.
             if (point.get(dimension - 1) < coord) {
                 if (below != null) {
-                    newResult = below.nearest (point, queue);
+                    newResult = below.nearest (point, queue, isInitPhase);
                 }
             } else {
                 if (above != null) {
-                    newResult = above.nearest (point, queue);
+                    newResult = above.nearest (point, queue, isInitPhase);
                 }
             }
 
