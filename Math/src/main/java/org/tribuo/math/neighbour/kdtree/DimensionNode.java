@@ -111,42 +111,28 @@ public class DimensionNode {
     }
 
     /**
-     * TODO: fix these docs!!!
-     * Returns whether the point is below the line represented by this node.
-     * <p>
-     * Calculation assumes a multi-dimensional point being compared within the
-     * given dimension 'dimension'
+     * Tests if the provided point is strictly below the line this node and its dimension represent.
      *
-     * @param pt    Point being compared
-     * @return      true if pt is "below" us in our dimension
+     * @param point The point being checked.
+     * @return true when the provided point is below this node.
      */
-    boolean isBelow (SGDVector pt) {
-        return pt.get(dimension - 1) < coord;
+    boolean isBelow(SGDVector point) {
+        return point.get(dimension - 1) < coord;
     }
 
     /**
-     * TODO: fix this!
-     */
-    IntAndVector getRecord() {
-        return record;
-    }
-
-
-    /**
-     * In the (sub)tree rooted at this node, see if one of its descendants is closer to the provided point.
-     * If no descendant improves on the min[] result then null is returned.
+     * Traverse the (sub)tree rooted at this node to see if its descendants are closer to the provided point.
      *
      * @param point The target point.
      * @param queue The priority queue used to maintain the k nearest neighbours.
-     * @return The record in tree that is closest.
+     * @param isInitializing A flag which indicates if this method is being called during query initialization.
      */
-    IntAndVector nearest (SGDVector point, DistanceRecordBoundedMinHeap queue, boolean isInitPhase) {
-        if (isInitPhase && queue.isFull()) {
-            return null;
+    void nearest(SGDVector point, DistanceRecordBoundedMinHeap queue, boolean isInitializing) {
+        // stop the recursion during initialization, as soon at the queue has reached is target capacity bound.
+        if (isInitializing && queue.isFull()) {
+            return;
         }
-
-        IntAndVector result = null;
-
+        
         // Get the distance between this node and the target point.
         double dist = DistanceType.getDistance(this.record.vector, point, distanceType);
         queue.boundedOffer(this.record, dist);
@@ -157,39 +143,26 @@ public class DimensionNode {
         // must be considered.
         double distPerp = Math.abs(coord - point.get(dimension - 1));
 
-        IntAndVector newResult = null;
         if (Double.compare(distPerp, queue.peek().dist) <= 0) {
             // Check both sides
             if (above != null) {
-                newResult = above.nearest(point, queue, isInitPhase);
-                if (newResult != null) {
-                    result = newResult;
-                }
+                above.nearest(point, queue, isInitializing);
             }
             if (below != null) {
-                newResult = below.nearest(point, queue, isInitPhase);
-                if (newResult != null) {
-                    result = newResult;
-                }
+                below.nearest(point, queue, isInitializing);
             }
         } else {
             // Only need to check one subtree, determine which one.
             if (point.get(dimension - 1) < coord) {
                 if (below != null) {
-                    newResult = below.nearest (point, queue, isInitPhase);
+                    below.nearest (point, queue, isInitializing);
                 }
             } else {
                 if (above != null) {
-                    newResult = above.nearest (point, queue, isInitPhase);
+                    above.nearest (point, queue, isInitializing);
                 }
             }
-
-            // Use smaller result, if found.
-            if (newResult != null) {
-                return newResult;
-            }
         }
-        return result;
     }
 
 }

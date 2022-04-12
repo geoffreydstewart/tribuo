@@ -30,6 +30,8 @@ import java.util.logging.Logger;
 
 /**
  * TODO: Delete this right before creating PR, maybe make a branch first. Delete the .csv files here too.
+ * This is a test for testing the performance of the NeighbourQuery implementations.
+ *
  */
 public class TestNeighboursPerf {
 

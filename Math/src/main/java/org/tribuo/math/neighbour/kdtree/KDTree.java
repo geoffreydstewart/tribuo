@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  * </pre>
  * <p>
  * Some aspects of this implementation, particularly the logic which finds the median and partitions the points for each
- * dimension are derived from:
+ * dimension, are derived from:
  * <pre>
  * G. Heineman, G. Pollice, and S. Selkow. "Algorithms in a Nutshell" O'Reilly Media, Inc. 2008.
  * <a href="http://oreilly.com/catalog/9780596516246/">Algorithms in a Nutshell</a>
@@ -52,7 +52,6 @@ import java.util.stream.Stream;
 public class KDTree implements NeighboursQuery {
 
     private final SGDVector[] data;
-    private final DistanceType distanceType;
     private final int numThreads;
 
     private final DimensionNode root;
@@ -66,7 +65,6 @@ public class KDTree implements NeighboursQuery {
      */
     KDTree(SGDVector[] data, DistanceType distanceType, int numThreads) {
         this.data = data;
-        this.distanceType = distanceType;
         this.numThreads = numThreads;
 
         int numDimensions = data[0].size();
@@ -89,20 +87,13 @@ public class KDTree implements NeighboursQuery {
 
     @Override
     public List<Pair<Integer, Double>> query(SGDVector point, int k) {
-        if (root == null) {
-            // TODO: this is not really ok
-            return null;
-        }
         DistanceRecordBoundedMinHeap queue = new DistanceRecordBoundedMinHeap(k);
 
-        initializeQueue(queue, point);
+        // make a fast initialization of the queue starting with points likely close to the target.
+        initializeQueue(point, queue);
 
-        IntAndVector betterOne = root.nearest(point, queue, false);
-
-        if (betterOne != null) {
-            double dist = DistanceType.getDistance(betterOne.vector, point, distanceType);
-            queue.boundedOffer(betterOne, dist);
-        }
+        // perform a thorough traversal of the tree to find the k nearest neighbours.
+        root.nearest(point, queue, false);
 
         @SuppressWarnings("unchecked")
         Pair<Integer, Double>[] indexDistanceArr = (Pair<Integer, Double>[]) new Pair[k];
@@ -305,40 +296,42 @@ public class KDTree implements NeighboursQuery {
         points[ind2] = tmpPoint;
     }
 
-    private void initializeQueue(DistanceRecordBoundedMinHeap queue, SGDVector point) {
-        DimensionNode parentOfPoint = parent(point);
+    /**
+     * Initialize the queue used throughout a query. First the node which might be the target point's parent is
+     * approximated, then the queue is seeded by checking for neighbours from this node.
+     * @param point The target point.
+     * @param queue The priority queue used to maintain the k nearest neighbours.
+     */
+    private void initializeQueue(SGDVector point, DistanceRecordBoundedMinHeap queue) {
+        DimensionNode parentOfPoint = approximateParentNode(point);
         parentOfPoint.nearest(point, queue,true);
     }
 
     /**
-     * TODO: fix these docs!!!
-     * Return the parent of the point IF the point were to be inserted into the kd-tree.
+     * This makes a fast approximation of the provided point's parent node, if it were being inserted
+     * into the tree.
      *
-     * Returns null only if the tree is empty to begin with (i.e., there are no parents).
-     *
-     * Note that you will have to inspect the dimension for the DimensionalNode to determine
-     * if this is a Below or an Above parent.
-     * @param value    proposed value which could be inserted (but is not).
-     * @return    node which would be parent if given value were to be inserted
+     * @param point The target point.
+     * @return The approximate parent node.
      */
-    public DimensionNode parent (SGDVector value) {
-        // we walk down the tree iteratively, varying from vertical to horizontal
+    public DimensionNode approximateParentNode(SGDVector point) {
         DimensionNode node = root;
+        // A non-leaf node is more desirable for this approximation. A reference to the last node where both child nodes
+        // are not null is maintained, in case a leaf node is approximated to be the parent.
         DimensionNode bestNode = node;
         DimensionNode next;
         while (node != null) {
             if (node.getBelow() != null && node.getAbove() != null) {
                 bestNode = node;
             }
-            // if this point is below node, search that location
-            // break and return this node
-            if (node.isBelow(value)) {
+            // If this point's specific feature is below the node's value at this dimension, search that direction
+            if (node.isBelow(point)) {
                 next = node.getBelow();
             } else {
                 next = node.getAbove();
             }
             if (next == null) {
-                // break and return this node
+                // This is the bottom of the tree, the terminating condition.
                 break;
             } else {
                 node = next;
@@ -415,11 +408,13 @@ public class KDTree implements NeighboursQuery {
     }
 
     /**
-     * A bounded min heap implementation which wraps a priority queue specific for {@link MutableDistRecordTuple}
+     * A bounded min heap implementation which wraps a priority queue specific to {@link MutableDistRecordTuple}
      * objects. This facilitates offering records to the queue without duplicating the logic wherever offer calls
      * must be performed.
      */
     static final class DistanceRecordBoundedMinHeap {
+        // A set containing the record ids needs to be maintained to prevent duplicates from being added into the
+        // queue.
         private final HashSet<Integer> recordIds = new HashSet<>();
         final int size;
         private final PriorityQueue<MutableDistRecordTuple> queue;
@@ -430,6 +425,7 @@ public class KDTree implements NeighboursQuery {
         }
 
         void boundedOffer(IntAndVector record, double distance) {
+            // Prevent duplicates
             if (recordIds.contains(record.idx)) {
                 return;
             }
@@ -439,8 +435,10 @@ public class KDTree implements NeighboursQuery {
                 recordIds.add(record.idx);
             }
             else if (Double.compare(distance, queue.peek().dist) < 0) {
+                // remove the record from the queue, and its id from the set.
                 MutableDistRecordTuple tuple = queue.poll();
                 recordIds.remove(tuple.record.idx);
+
                 tuple.dist = distance;
                 tuple.record = record;
                 queue.offer(tuple);
