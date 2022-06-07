@@ -112,7 +112,7 @@ public class TestPerfHdbscan {
         doTrain(kd2ktrainer, dataset2K, "K-D Tree 2K");
         System.out.println("***************");
         System.out.println();
-        */
+         */
 
         Dataset<ClusterID> dataset50k = get50KDataset();
         HdbscanTrainer bf50ktrainer = new HdbscanTrainer(10, DistanceType.L2, 5, 8, NeighboursQueryFactoryType.BRUTE_FORCE);
