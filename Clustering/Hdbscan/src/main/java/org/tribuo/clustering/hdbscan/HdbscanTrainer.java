@@ -38,6 +38,7 @@ import org.tribuo.math.neighbour.bruteforce.NeighboursBruteForceFactory;
 import org.tribuo.provenance.ModelProvenance;
 import org.tribuo.provenance.TrainerProvenance;
 import org.tribuo.provenance.impl.TrainerProvenanceImpl;
+import org.tribuo.util.Util;
 
 import java.io.Serializable;
 import java.time.OffsetDateTime;
@@ -261,8 +262,15 @@ public final class HdbscanTrainer implements Trainer<ClusterID> {
             n++;
         }
 
+        long startTime = System.currentTimeMillis();
         DenseVector coreDistances = calculateCoreDistances(data, k, neighboursQueryFactory);
+        long endTime = System.currentTimeMillis();
+        System.out.println("Core distances took " + Util.formatDuration(startTime,endTime));
+
+        startTime = System.currentTimeMillis();
         ExtendedMinimumSpanningTree emst = constructEMST(data, coreDistances, distType);
+        endTime = System.currentTimeMillis();
+        System.out.println("EMST took " + Util.formatDuration(startTime,endTime));
 
         double[] pointNoiseLevels = new double[data.length];    // The levels at which each point becomes noise
         int[] pointLastClusters = new int[data.length];         // The last label of each point before becoming noise
