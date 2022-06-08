@@ -103,7 +103,6 @@ public class TestPerfHdbscan {
     @Disabled
     @Test
     public void hdbscan50000ClusteringTest() {
-        /*
         Dataset<ClusterID> dataset2K = get2KDataset();
         HdbscanTrainer bf2ktrainer = new HdbscanTrainer(10, DistanceType.L2, 5, 2, NeighboursQueryFactoryType.BRUTE_FORCE);
         HdbscanTrainer kd2ktrainer = new HdbscanTrainer(10, DistanceType.L2, 5, 2, NeighboursQueryFactoryType.KD_TREE);
@@ -112,8 +111,8 @@ public class TestPerfHdbscan {
         doTrain(kd2ktrainer, dataset2K, "K-D Tree 2K");
         System.out.println("***************");
         System.out.println();
-         */
 
+        /*
         Dataset<ClusterID> dataset50k = get50KDataset();
         HdbscanTrainer bf50ktrainer = new HdbscanTrainer(10, DistanceType.L2, 5, 8, NeighboursQueryFactoryType.BRUTE_FORCE);
         HdbscanTrainer kd50ktrainer = new HdbscanTrainer(10, DistanceType.L2, 5, 8, NeighboursQueryFactoryType.KD_TREE);
@@ -140,6 +139,7 @@ public class TestPerfHdbscan {
         doTrain(kd150ktrainer, dataset150k, "K-D Tree 150K");
         System.out.println("***************");
         System.out.println();
+        */
     }
 
 }

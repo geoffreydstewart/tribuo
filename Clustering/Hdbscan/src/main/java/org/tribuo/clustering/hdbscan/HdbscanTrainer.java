@@ -375,6 +375,8 @@ public final class HdbscanTrainer implements Trainer<ClusterID> {
         int numAttachedPoints = 1;
         attachedPoints.set(data.length-1);
 
+        int actualDistanceCalls = 0;
+
         // Continue attaching points to the MST until all points are attached:
         while (numAttachedPoints < data.length) {
             int nearestMRDPoint = -1;
@@ -387,6 +389,7 @@ public final class HdbscanTrainer implements Trainer<ClusterID> {
                 }
 
                 double mutualReachabilityDistance = DistanceType.getDistance(data[currentPoint], data[neighbor], distType);
+                actualDistanceCalls++;
                 if (coreDistances.get(currentPoint) > mutualReachabilityDistance) {
                     mutualReachabilityDistance = coreDistances.get(currentPoint);
                 }
@@ -410,6 +413,8 @@ public final class HdbscanTrainer implements Trainer<ClusterID> {
             numAttachedPoints++;
             currentPoint = nearestMRDPoint;
         }
+
+        System.out.println("EMST: Actual number of calls to DistanceType.getDistance is: " + actualDistanceCalls);
 
         // Create an array for vertices in the tree that each point attached to:
         int[] otherVertexIndices = new int[2*data.length - 1];
